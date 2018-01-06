@@ -1,11 +1,14 @@
 package com.example.nayan.appanalysis2.forgroundApp;
 
+import android.accounts.Account;
+import android.accounts.AccountManager;
 import android.annotation.TargetApi;
 import android.app.AppOpsManager;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
+import android.provider.Settings;
 
 import com.example.nayan.appanalysis2.MainApplication;
 
@@ -62,6 +65,18 @@ public class Utils {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
         String day = sdf.format(new Date());
         return day;
+    }
+
+    public static String getPhoneGmailAcc(Context context) {
+        AccountManager accountManager = AccountManager.get(context);
+        Account[] accounts = accountManager.getAccountsByType("com.google");
+        return accounts.length > 0 ? accounts[0].name.trim().toLowerCase() : "null";
+
+    }
+
+    // get android device id
+    public static String getDeviceId(Context context) {
+        return Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
     }
 
 }

@@ -19,6 +19,7 @@ import com.example.nayan.appanalysis2.MainActivity;
 import com.example.nayan.appanalysis2.MainApplication;
 import com.example.nayan.appanalysis2.R;
 import com.example.nayan.appanalysis2.ScreenshotManager;
+import com.example.nayan.appanalysis2.SubmitActivity;
 import com.example.nayan.appanalysis2.database.DBManager;
 import com.example.nayan.appanalysis2.database.MImage;
 
@@ -82,6 +83,8 @@ public class ForegroundToastService extends Service {
         handler = new Handler();
         mImages = new ArrayList<>();
 
+        SubmitActivity.getInstance().requestPermission();
+
 
     }
 
@@ -103,9 +106,9 @@ public class ForegroundToastService extends Service {
                 .when(getPackageName(), new AppChecker.Listener() {
                     @Override
                     public void onForeground(String packageName) {
-                        MainActivity.getInstance().requestPermission();
+//                        MainActivity.getInstance().requestPermission();
                         if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                            ScreenshotManager.INSTANCE.takeScreenshot(getApplicationContext());
+//                            ScreenshotManager.INSTANCE.takeScreenshot(getApplicationContext());
                         }
 
 
@@ -155,13 +158,13 @@ public class ForegroundToastService extends Service {
 
                         } else {
                             mImages = DBManager.getInstance().getAllImage();
-//                            ScreenshotManager.INSTANCE.getImage(MainApplication.context, mImages.get(0).getImgName());
+//                            ScreenshotManager.INSTANCE.getImage(MainApplication.context, mImages.get(2).getImgName());
                         }
                         Log.e("Foreground: ", "app " + packageName);
 //                        Toast.makeText(getBaseContext(), "Foreground: " + packageName, Toast.LENGTH_SHORT).show();
                     }
                 })
-                .timeout(15000)
+                .timeout(20000)
                 .start(this);
     }
 

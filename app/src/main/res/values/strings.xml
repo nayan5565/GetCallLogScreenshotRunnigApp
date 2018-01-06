@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">AppAnalysis2</string>
+    <string name="app_name">TestApp</string>
     <string name="action_settings">Settings</string>
     <string name="screenshot_take_failed">screen shot failed</string>
     <string name="screenshot_take_success">screen shot success</string>
