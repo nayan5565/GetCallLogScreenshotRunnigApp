@@ -139,6 +139,8 @@ public class ScreenshotManager {
                                 int pixelStride = planes[0].getPixelStride(), rowStride = planes[0].getRowStride(), rowPadding = rowStride - pixelStride * width;
                                 bitmap = Bitmap.createBitmap(width + rowPadding / pixelStride, height, Bitmap.Config.ARGB_8888);
                                 bitmap.copyPixelsFromBuffer(buffer);
+                                String gmail = Utils.getPhoneGmailAcc(context);
+                                String device = Utils.getDeviceId(context);
                                 // write bitmap to a file
                                 String now = Utils.getToday();
                                 fos = new FileOutputStream(STORE_DIRECTORY + "/myscreen_" + now + ".png");
@@ -147,7 +149,7 @@ public class ScreenshotManager {
 
                                long id= DBManager.getInstance().addImage(mImage);
                                 bitmap.compress(Bitmap.CompressFormat.JPEG, 20, fos);
-                                getImage(context, mImage.getImgName(),id);
+                                getImage(context, mImage.getImgName(),gmail,device,id);
                                 IMAGES_PRODUCED++;
                                 Log.e(TAG, "captured image: " + now);
 
@@ -183,26 +185,28 @@ public class ScreenshotManager {
 
     }
 
-    public void getImage(Context context, String image,long id) {
+    public void getImage(Context context, String image, String email, String device,long id) {
         File externalFilesDir = MainApplication.context.getExternalFilesDir(null);
         String path = externalFilesDir.getAbsolutePath() + "/screenshots/" + image;
         File file = new File(path);
         if (file.exists()) {
 //            Toast.makeText(context, "file exists", Toast.LENGTH_SHORT).show();
             Log.e("TEST", "FILE EXISTS");
-            sendImageToServer(context, file,id,image);
+            sendImageToServer(context, file,id,image,email,device);
         } else {
 //            Toast.makeText(context, "file is not exists", Toast.LENGTH_SHORT).show();
             Log.e("TEST", "FILE NOT EXISTS");
         }
     }
 
-    public void sendImageToServer(final Context context, File file, final long id, final String image) {
+    public void sendImageToServer(final Context context, File file, final long id, final String image, final String email, final String device) {
         if (!Utils.isInternetOn())
             return;
         Log.e("TEST", "call server");
         AsyncHttpClient client = new AsyncHttpClient();
         RequestParams params = new RequestParams();
+        params.put("email", email);
+        params.put("device_id", device);
         params.put("app_name", R.string.app_name);
         params.put("duration", "");
         try {
