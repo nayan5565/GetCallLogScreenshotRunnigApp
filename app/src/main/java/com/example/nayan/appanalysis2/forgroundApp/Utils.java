@@ -9,6 +9,8 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
 import android.provider.Settings;
+import android.util.Log;
+import android.widget.Toast;
 
 import com.example.nayan.appanalysis2.MainApplication;
 
@@ -77,6 +79,14 @@ public class Utils {
     // get android device id
     public static String getDeviceId(Context context) {
         return Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
+    }
+
+    public static void log(String tag, String msg) {
+        Log.e(tag, msg);
+    }
+
+    public static void  toastShow(String msg){
+        Toast.makeText(MainApplication.context, msg, Toast.LENGTH_SHORT).show();
     }
 
 }

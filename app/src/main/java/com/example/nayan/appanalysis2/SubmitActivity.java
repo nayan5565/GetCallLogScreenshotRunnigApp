@@ -139,9 +139,10 @@ public class SubmitActivity extends AppCompatActivity implements View.OnClickLis
 
     @Override
     public void onClick(View view) {
-        if (edt.getText().toString().equals(pass))
+        if (edt.getText().toString().equals(pass)) {
             startActivity(new Intent(SubmitActivity.this, MainActivity.class));
-        else {
+            finish();
+        } else {
             Toast.makeText(SubmitActivity.this, "wrong pass", Toast.LENGTH_SHORT).show();
         }
     }

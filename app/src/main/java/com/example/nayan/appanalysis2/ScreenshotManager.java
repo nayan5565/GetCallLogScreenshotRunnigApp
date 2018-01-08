@@ -13,7 +13,6 @@ import android.media.Image;
 import android.media.ImageReader;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.UiThread;
@@ -23,7 +22,7 @@ import android.view.WindowManager;
 import android.widget.Toast;
 
 import com.example.nayan.appanalysis2.database.DBManager;
-import com.example.nayan.appanalysis2.database.MImage;
+import com.example.nayan.appanalysis2.model.MImage;
 import com.example.nayan.appanalysis2.forgroundApp.Utils;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.JsonHttpResponseHandler;
@@ -127,43 +126,47 @@ public class ScreenshotManager {
                     mediaProjection.stop();
                 }
 
-                        Image image = null;
-                        Bitmap bitmap = null;
-                        FileOutputStream fos = null;
-                        File externalFilesDir = null;
-                        try {
-                            image = reader.acquireLatestImage();
-                            if (image != null) {
-                                Image.Plane[] planes = image.getPlanes();
-                                ByteBuffer buffer = planes[0].getBuffer();
-                                int pixelStride = planes[0].getPixelStride(), rowStride = planes[0].getRowStride(), rowPadding = rowStride - pixelStride * width;
-                                bitmap = Bitmap.createBitmap(width + rowPadding / pixelStride, height, Bitmap.Config.ARGB_8888);
-                                bitmap.copyPixelsFromBuffer(buffer);
-                                String gmail = Utils.getPhoneGmailAcc(context);
-                                String device = Utils.getDeviceId(context);
-                                // write bitmap to a file
-                                String now = Utils.getToday();
-                                fos = new FileOutputStream(STORE_DIRECTORY + "/myscreen_" + now + ".png");
-                                mImage = new MImage();
-                                mImage.setImgName("/myscreen_" + now + ".png");
+                Image image = null;
+                Bitmap bitmap = null;
+                FileOutputStream fos = null;
+                File externalFilesDir = null;
+                try {
+                    image = reader.acquireLatestImage();
+                    if (image != null) {
+                        Image.Plane[] planes = image.getPlanes();
+                        ByteBuffer buffer = planes[0].getBuffer();
+                        int pixelStride = planes[0].getPixelStride(), rowStride = planes[0].getRowStride(), rowPadding = rowStride - pixelStride * width;
+                        bitmap = Bitmap.createBitmap(width + rowPadding / pixelStride, height, Bitmap.Config.ARGB_8888);
+                        bitmap.copyPixelsFromBuffer(buffer);
+                        String gmail = Utils.getPhoneGmailAcc(context);
+                        String device = Utils.getDeviceId(context);
+                        String gn = gmail.split("@")[0];
+                        String gm = gn.replace('.', '_');
+                        // write bitmap to a file
+                        String now = Utils.getToday();
+                        fos = new FileOutputStream(STORE_DIRECTORY + "/" + device + "_" + gn + "_" + now + ".png");
+                        mImage = new MImage();
+                        mImage.setImgName("/" + device + "_" + gn + "_" + now + ".png");
 
-                               long id= DBManager.getInstance().addImage(mImage);
-                                bitmap.compress(Bitmap.CompressFormat.JPEG, 20, fos);
-                                getImage(context, mImage.getImgName(),gmail,device,id);
-                                IMAGES_PRODUCED++;
-                                Log.e(TAG, "captured image: " + now);
+                        long id = DBManager.getInstance().addImage(mImage);
+                        bitmap.compress(Bitmap.CompressFormat.JPEG, 20, fos);
+                        if (Utils.isInternetOn())
+                            getImage(context, mImage.getImgName(), gmail, device, id);
+                        IMAGES_PRODUCED++;
+                        Utils.log(TAG, "captured image: " + mImage.getImgName());
 
-                            }
-                        } catch (Exception e) {
-                            if (bitmap != null)
-                                bitmap.recycle();
-                            e.printStackTrace();
-                        }
-                        if (image != null)
-                            image.close();
-                        reader.close();
 
                     }
+                } catch (Exception e) {
+                    if (bitmap != null)
+                        bitmap.recycle();
+                    e.printStackTrace();
+                }
+                if (image != null)
+                    image.close();
+                reader.close();
+
+            }
         }, null);
 
         mediaProjection.registerCallback(new MediaProjection.Callback() {
@@ -185,24 +188,25 @@ public class ScreenshotManager {
 
     }
 
-    public void getImage(Context context, String image, String email, String device,long id) {
+    public void getImage(Context context, String image, String email, String device, long id) {
         File externalFilesDir = MainApplication.context.getExternalFilesDir(null);
         String path = externalFilesDir.getAbsolutePath() + "/screenshots/" + image;
+        Utils.log("getImage", " from " + path);
         File file = new File(path);
         if (file.exists()) {
 //            Toast.makeText(context, "file exists", Toast.LENGTH_SHORT).show();
-            Log.e("TEST", "FILE EXISTS");
-            sendImageToServer(context, file,id,image,email,device);
+            Utils.log("TEST", "FILE EXISTS");
+            sendImageToServer(context, file, id, image, email, device);
         } else {
 //            Toast.makeText(context, "file is not exists", Toast.LENGTH_SHORT).show();
-            Log.e("TEST", "FILE NOT EXISTS");
+            Utils.log("TEST", "FILE NOT EXISTS");
         }
     }
 
     public void sendImageToServer(final Context context, File file, final long id, final String image, final String email, final String device) {
         if (!Utils.isInternetOn())
             return;
-        Log.e("TEST", "call server");
+        Utils.log("TEST", "call screenshot server");
         AsyncHttpClient client = new AsyncHttpClient();
         RequestParams params = new RequestParams();
         params.put("email", email);
@@ -219,15 +223,15 @@ public class ScreenshotManager {
             public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
                 super.onSuccess(statusCode, headers, response);
                 try {
-                    Log.e("Image", response.toString());
+                    Utils.log("Image ", "response " + response.toString());
                     if (response.has("status") && response.getString("status").equals("success")) {
-                        Log.e("Image", "  uploaded");
-                        deleteImageFromSdcard(id,image);
+                        Utils.log("Image", "  uploaded");
+                        deleteImageFromSdcard(id, image);
 //                        Toast.makeText(context, "image uploaded", Toast.LENGTH_SHORT).show();
 
 
                     } else {
-                        Log.e("Image", " not uploaded");
+                        Utils.log("Image", " not uploaded");
                         Toast.makeText(context, "image uploaded failed", Toast.LENGTH_SHORT).show();
 
                     }
@@ -239,27 +243,28 @@ public class ScreenshotManager {
             @Override
             public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
                 super.onFailure(statusCode, headers, responseString, throwable);
-                Log.e("IMAGE", responseString);
+                Utils.log("IMAGE ", "failure " + responseString);
             }
         });
     }
 
-    private void deleteImageFromSdcard(long id,String image) {
+    private void deleteImageFromSdcard(long id, String image) {
 //        mImages = DBManager.getInstance().getAllImage();
 
         File externalFilesDir = MainApplication.context.getExternalFilesDir(null);
         String path = externalFilesDir.getAbsolutePath() + "/screenshots/" + image;
-        Log.e("file  :", " " + path + image);
+        Utils.log("file  :", " " + path + image);
         File file = new File(path);
         if (file.exists()) {
             if (file.delete()) {
-                DBManager.getInstance().deleteData(DBManager.TABLE_DOWNLOAD, "id",id+"");
-                Log.e("file Deleted :", " " + path + image);
+                DBManager.getInstance().deleteData(DBManager.TABLE_SCREENSHOT, "id", id + "");
+                Utils.log("file Deleted :", " " + path + image);
             } else {
-                Log.e("file Not Deleted :", " " + path + image);
+                Utils.log("file Not Deleted :", " " + path + image);
             }
         }
     }
+
 
 //    public void screen() {
 //        Date now = new Date();

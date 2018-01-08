@@ -1,4 +1,4 @@
-package com.example.nayan.appanalysis2.database;
+package com.example.nayan.appanalysis2.model;
 
 /**
  * Created by Dev on 1/2/2018.

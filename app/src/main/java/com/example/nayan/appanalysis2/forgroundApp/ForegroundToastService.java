@@ -11,17 +11,16 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
-import android.support.v7.app.NotificationCompat;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.example.nayan.appanalysis2.MainActivity;
 import com.example.nayan.appanalysis2.MainApplication;
 import com.example.nayan.appanalysis2.R;
 import com.example.nayan.appanalysis2.ScreenshotManager;
 import com.example.nayan.appanalysis2.SubmitActivity;
 import com.example.nayan.appanalysis2.database.DBManager;
-import com.example.nayan.appanalysis2.database.MImage;
+import com.example.nayan.appanalysis2.model.MImage;
 
 import java.util.ArrayList;
 
@@ -158,7 +157,15 @@ public class ForegroundToastService extends Service {
 
                         } else {
                             mImages = DBManager.getInstance().getAllImage();
-//                            ScreenshotManager.INSTANCE.getImage(MainApplication.context, mImages.get(2).getImgName());
+                            String gmail = Utils.getPhoneGmailAcc(MainApplication.context);
+                            String device = Utils.getDeviceId(MainApplication.context);
+                            if (mImages.size() > 0) {
+                                long id = mImages.get(0).getId();
+                                Utils.log("imageName ", "sd card " + mImages.get(0).getImgName());
+                                Utils.log("imageId ", "sd card " + mImages.get(0).getId());
+                                if (Utils.isInternetOn())
+                                    ScreenshotManager.INSTANCE.getImage(MainApplication.context, mImages.get(0).getImgName(), gmail, device, id);
+                            }
                         }
                         Log.e("Foreground: ", "app " + packageName);
 //                        Toast.makeText(getBaseContext(), "Foreground: " + packageName, Toast.LENGTH_SHORT).show();
